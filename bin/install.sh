@@ -51,16 +51,13 @@ while getopts hvdD opt; do
 done
 shift "$((OPTIND-1))"   # Discard the options and sentinel --
 
-# check environment argument
-if [ ! -n "$1" ]; then
-    echo "An environment argument is required!"
-    exit 1
-fi
-
-
 # Install puppet5 release
 install_puppet_release()
 {
+    dpkg-query -s lsb-release &> /dev/null
+    if [ $? -ne 0 ]; then
+        apt-get install lsb-release >&2
+    fi
     dpkg-query -s puppet5-release &> /dev/null
     if [ $? -ne 0 ]; then
         CODENAME=$(lsb_release -sc)
@@ -72,8 +69,11 @@ install_puppet_release()
 # install puppet agent
 dpkg-query -s puppet-agent &> /dev/null
 if [ $? -ne 0 ]; then
+    apt-get update && 
+    install_puppet_release &&
     apt-get update && apt-get install puppet-agent >&2
 fi
+
 
 # verify if puppet is installed and try to install it otherwise!
 PUPPET_VERSION=$(puppet --version)
@@ -157,7 +157,7 @@ EOM
 # Install initial pupet-r10k and puppet-hiera 
 puppet apply $VERBOSE $DEBUG -e "$INIT"
 # deploy environment
-r10k deploy environment -v
+r10k deploy environment $PUPPET_ENVIRONMENT -v
 cd $PUPPET_ENVPATH/$PUPPET_ENVIRONMENT
 librarian-puppet install $VERBOSE
 exit 0
