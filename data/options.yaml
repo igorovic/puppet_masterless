@@ -1,0 +1,6 @@
+---
+lookup_options:
+  profile::database_server::databases:
+    merge:
+      strategy: deep
+      merge_hash_arrays: true

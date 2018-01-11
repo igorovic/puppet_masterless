@@ -1,0 +1,11 @@
+version: 5
+defaults:
+  datadir: data
+  data_hash: yaml_data
+hierarchy:
+  - name: "Environment Eyaml hierarchy"
+    paths:
+      - "options.yaml"  # define some data source options like lookup_options
+      - "role/%{::role}-%{::environment}.yaml"
+      - "role/%{::role}.yaml"
+      - "common.yaml"
