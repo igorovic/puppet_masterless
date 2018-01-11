@@ -6,13 +6,12 @@
 # The script is not failure proof. It means that in case of failure or execution abortion
 # this script will not clean partialy installed data. 
 #-------------------------------------------------------------------------------
-
 # Usage info
 show_help() {
 cat << EOF
-Usage: ${0##*/} [-vhdD] [ENVIRONMENT]
+Usage: ${0##*/} [-vhdD] 
     This script will deploy a masterless puppet environment on the the local machine. 
-    The target environment is passed as command line argument.
+    The target environment is retrieved from 'puppet config print environment'
 
     -h          display this help and exit
     -v          verbose mode. Can be combined with -d
@@ -20,7 +19,7 @@ Usage: ${0##*/} [-vhdD] [ENVIRONMENT]
     -D          bash debug mode
     
     Example:
-        ${0##*/} -v -d igorovic_python_dev
+        ${0##*/} -v -d 
     Available environments:
         - igorovic_python_dev
 EOF
@@ -113,14 +112,27 @@ module_install "puppet-r10k"
 
 INIT=$(cat <<-EOM
     node default {
-        package {'librarian-puppet': ensure => 'installed', provider => 'gem'}
-        
+        group { 'puppet':
+            ensure => 'present',
+            gid    => '111',
+        }->
+        user { 'puppet':
+            ensure           => 'present',
+            gid              => '111',
+            home             => '/etc/puppetlabs/puppet',
+            password         => '!!',
+            password_max_age => '0',
+            password_min_age => '0',
+            shell            => '/bin/false',
+            uid              => '107',
+        }->
+        package {'librarian-puppet': ensure => 'installed', provider => 'gem'}->
         class { 'r10k':
             sources => {
               'igorovic_masterless' => {
                 'remote'  => 'https://github.com/igorovic/puppet_masterless.git',
                 'basedir' => "\${::settings::environmentpath}",
-                'prefix'  => true,
+                'prefix'  => false,
               },
             },
             configfile          => "\${::settings::confdir}/r10k.yaml",
@@ -159,7 +171,11 @@ puppet apply $VERBOSE $DEBUG -e "$INIT"
 # deploy environment
 r10k deploy environment $PUPPET_ENVIRONMENT -v
 cd $PUPPET_ENVPATH/$PUPPET_ENVIRONMENT
-librarian-puppet install $VERBOSE
+if [ $? -eq 0 ]; then
+    librarian-puppet install $VERBOSE
+else
+    echo "Error during 'r10k deploy environment'!"
+fi
 exit 0
  
 
