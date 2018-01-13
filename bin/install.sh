@@ -146,7 +146,6 @@ INIT=$(cat <<-EOM
             hiera_version => '5',
             hierarchy => [
                 {"name" => "certname", "path" => "%{trusted.certname}.yaml"},
-                {"name" => "environment", "path" => "%{::environment}.yaml"},
                 {"name" => "common", "path" => "common.yaml"},
                 {"name" => "secrets", "path" => "secrets.eyaml", "lookup_key"=>"eyaml_lookup_key",
                     "options"=>{"pkcs7_private_key"=>"\${::settings::confdir}/keys/private_key.pkcs7.pem",

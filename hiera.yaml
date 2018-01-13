@@ -6,6 +6,11 @@ hierarchy:
   - name: "Environment Eyaml hierarchy"
     paths:
       - "options.yaml"  # define some data source options like lookup_options
-      - "role/%{::role}-%{::environment}.yaml"
-      - "role/%{::role}.yaml"
+      - "%{::environment}.yaml"
       - "common.yaml"
+  - name: "role's data"
+    datadir: site/role/data
+    paths:
+      - "options.yaml"
+      - "%{::role}.yaml"
+
