@@ -154,6 +154,7 @@ INIT=$(cat <<-EOM
             datadir     => "\${::settings::confdir}/data",
             eyaml       => true,
             hiera_yaml  => "\${::settings::confdir}/hiera.yaml",
+            postrun => ['git', 'clone', 'https://github.com/igorovic/puppet_roles_and_profiles.git', "\${::settings::environmentpath}/${PUPPET_ENVIRONMENT}/site/;", 'rm', '-rf', "\${::settings::environmentpath}/${PUPPET_ENVIRONMENT}/site/.git"],
         }->
         # with puppet5, eyaml is not installed in the search path thus we create a symlink
         file { '/usr/local/bin/eyaml':
