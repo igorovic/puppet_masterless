@@ -9,7 +9,7 @@
 # Usage info
 show_help() {
 cat << EOF
-Usage: ${0##*/} [-vhdD] 
+Usage: ${0##*/} [-vhdD] [role]
     This script will deploy a masterless puppet environment on the the local machine. 
     The target environment is retrieved from 'puppet config print environment'
 
@@ -20,8 +20,8 @@ Usage: ${0##*/} [-vhdD]
     
     Example:
         ${0##*/} -v -d 
-    Available environments:
-        - igorovic_python_dev
+    roel:
+        The puppet role you want to deploy
 EOF
 }
 
@@ -175,6 +175,10 @@ if [ $? -eq 0 ]; then
     librarian-puppet install $VERBOSE
 else
     echo "Error during 'r10k deploy environment'!"
+fi
+#Êdeploy the request role
+if [ ! -z "$1" ]; then
+    puppet apply $PUPPET_ENVPATH/$PUPPET_ENVIRONMENT/manifests/site.pp $VERBOSE $DEBUG 
 fi
 exit 0
  
