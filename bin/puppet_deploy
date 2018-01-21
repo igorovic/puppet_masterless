@@ -1,0 +1,54 @@
+#!/bin/bash
+#
+# Deploys a puppet role
+# 
+how_help() {
+cat << EOF
+Usage: ${0##*/} [role]
+    This script will deploy a puppet role using 'puppet apply'
+
+    -h          display this help and exit
+    -v          verbose mode. Can be combined with -d
+    -d          debug mode. Can be combined with -v
+    -D          bash debug mode
+    
+    Example:
+        ${0##*/} -v -d 
+    role:
+        The puppet role you want to deploy
+EOF
+}
+OPTIND=1
+# Resetting OPTIND is necessary if getopts was used previously in the script.
+# It is a good idea to make OPTIND local if you process options in a function.
+
+while getopts hvdD opt; do
+    case $opt in
+        h)
+            show_help
+            exit 0
+            ;;
+        v)  VERBOSE="--verbose"
+            ;;
+        d)  DEBUG="--debug"
+            ;;
+        D)  DEBUG="--debug"
+            set -x # enables bash debug
+            ;;
+        *)
+            show_help >&2
+            exit 1
+            ;;
+    esac
+done
+shift "$((OPTIND-1))"   # Discard the options and sentinel --
+
+PUPPET_ENVPATH=$(puppet config print environmentpath)
+PUPPET_ENVIRONMENT=$(puppet config print environment)
+
+if [ ! -z "$1" ]; then
+    echo "$1" > /etc/role_puppet
+    puppet apply $PUPPET_ENVPATH/$PUPPET_ENVIRONMENT/manifests/site.pp $VERBOSE $DEBUG
+else 
+    puppet apply $PUPPET_ENVPATH/$PUPPET_ENVIRONMENT/manifests/site.pp $VERBOSE $DEBUG
+fi

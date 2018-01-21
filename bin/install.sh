@@ -20,7 +20,7 @@ Usage: ${0##*/} [-vhdD] [role]
     
     Example:
         ${0##*/} -v -d 
-    roel:
+    role:
         The puppet role you want to deploy
 EOF
 }
@@ -176,8 +176,9 @@ if [ $? -eq 0 ]; then
 else
     echo "Error during 'r10k deploy environment'!"
 fi
-#Êdeploy the request role
+# deploy the request role
 if [ ! -z "$1" ]; then
+    echo "$1" > /etc/role_puppet
     puppet apply $PUPPET_ENVPATH/$PUPPET_ENVIRONMENT/manifests/site.pp $VERBOSE $DEBUG 
 fi
 exit 0
