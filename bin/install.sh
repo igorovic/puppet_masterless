@@ -130,7 +130,11 @@ INIT=$(cat <<-EOM
         file { '/usr/bin/puppet_deploy':
             ensure => 'link',
             target => "\${::settings::environmentpath}/\${::settings::environment}/bin/puppet_deploy",
-        }
+        }->
+        file { '/usr/bin/update_rp':
+            ensure => 'link',
+            target => "\${::settings::environmentpath}/\${::settings::environment}/bin/update_rp.rb",
+        }->
         class { 'r10k':
             sources => {
               'igorovic_masterless' => {
