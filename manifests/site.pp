@@ -4,8 +4,4 @@
 #      
 node default {
   include "role::${::role}"
-  file { '/usr/bin/puppet_deploy':
-    ensure => 'link',
-    target => "${::environmentpath}/${::environment}/bin/puppet_deploy",
-  }
 }

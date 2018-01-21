@@ -127,6 +127,10 @@ INIT=$(cat <<-EOM
             uid              => '107',
         }->
         package {'librarian-puppet': ensure => 'installed', provider => 'gem'}->
+        file { '/usr/bin/puppet_deploy':
+            ensure => 'link',
+            target => "\${::settings::environmentpath}/\${::settings::environment}/bin/puppet_deploy",
+        }
         class { 'r10k':
             sources => {
               'igorovic_masterless' => {
