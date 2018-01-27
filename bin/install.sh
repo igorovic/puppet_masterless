@@ -4,22 +4,22 @@
 # Currently only Debian based nix are supported
 # Note:
 # The script is not failure proof. It means that in case of failure or execution abortion
-# this script will not clean partialy installed data. 
+# this script will not clean partialy installed data.
 #-------------------------------------------------------------------------------
 # Usage info
 show_help() {
 cat << EOF
 Usage: ${0##*/} [-vhdD] [role]
-    This script will deploy a masterless puppet environment on the the local machine. 
+    This script will deploy a masterless puppet environment on the the local machine.
     The target environment is retrieved from 'puppet config print environment'
 
     -h          display this help and exit
     -v          verbose mode. Can be combined with -d
     -d          debug mode. Can be combined with -v
     -D          bash debug mode
-    
+
     Example:
-        ${0##*/} -v -d 
+        ${0##*/} -v -d
     role:
         The puppet role you want to deploy
 EOF
@@ -53,12 +53,12 @@ shift "$((OPTIND-1))"   # Discard the options and sentinel --
 # Install puppet5 release
 install_puppet_release()
 {
-    
+
     if ! dpkg-query -s lsb-release &> /dev/null
     then
         apt-get install lsb-release >&2
     fi
-    
+
     if ! dpkg-query -s puppet5-release &> /dev/null
     then
         CODENAME=$(lsb_release -sc)
@@ -68,21 +68,21 @@ install_puppet_release()
     fi
 }
 # install puppet agent
-if ! dpkg-query -s puppet-agent &> /dev/null 
+if ! dpkg-query -s puppet-agent &> /dev/null
 then
-    apt-get update && 
+    apt-get update &&
     install_puppet_release &&
     apt-get update && apt-get install puppet-agent >&2
 fi
 
 
 # verify if puppet is installed and try to install it otherwise!
-if puppet --version -eq 127 # 127 => command not found  
+if ! command -v puppet # 127 => command not found
 then
     echo "Try to install puppet"
     SYSBINPATH=$(systemd-path system-binaries)
     ln -s /opt/puppetlabs/puppet/bin/puppet "$SYSBINPATH/puppet"
-    if puppet --version -eq 127
+    if ! command -v puppet
     then
         echo "Puppet app is missing! Install it before continuing!"
         exit 1
@@ -93,7 +93,7 @@ PUPPET_CONFDIR=$(puppet config print confdir)
 PUPPET_ENVPATH=$(puppet config print environmentpath)
 #PUPPET_MODULEPATH=$(puppet config print modulepath)
 PUPPET_ENVIRONMENT=$(puppet config print environment)
-    
+
 module_install()
 {
     if [ ! "$(puppet module list | grep -c "$1")" -gt 0 ]; then
@@ -149,10 +149,10 @@ INIT=$(cat <<-EOM
             configfile          => "\${::settings::confdir}/r10k.yaml",
             provider            => 'gem',
             puppet_master       => false,
-            
+
         }
         contain 'r10k' # explicit class containement according to puppet documentation
-        
+
         class { 'hiera':
             hiera_version => '5',
             hierarchy => [
@@ -176,11 +176,11 @@ INIT=$(cat <<-EOM
 EOM
 )
 
-# Install initial pupet-r10k and puppet-hiera 
+# Install initial pupet-r10k and puppet-hiera
 puppet apply $VERBOSE $DEBUG -e "$INIT"
 # deploy environment
 r10k deploy environment "$PUPPET_ENVIRONMENT" -v
-if ! cd "$PUPPET_ENVPATH/$PUPPET_ENVIRONMENT" 
+if ! cd "$PUPPET_ENVPATH/$PUPPET_ENVIRONMENT"
 then
     librarian-puppet install $VERBOSE
 else
@@ -189,6 +189,6 @@ fi
 # deploy the request role
 if [ ! -z "$1" ]; then
     echo "$1" > /etc/role_puppet
-    puppet apply "$PUPPET_ENVPATH/$PUPPET_ENVIRONMENT/manifests/site.pp" $VERBOSE $DEBUG 
+    puppet apply "$PUPPET_ENVPATH/$PUPPET_ENVIRONMENT/manifests/site.pp" $VERBOSE $DEBUG
 fi
 exit 0
