@@ -53,21 +53,23 @@ shift "$((OPTIND-1))"   # Discard the options and sentinel --
 # Install puppet5 release
 install_puppet_release()
 {
-    dpkg-query -s lsb-release &> /dev/null
-    if [ $? -ne 0 ]; then
+    
+    if ! dpkg-query -s lsb-release &> /dev/null
+    then
         apt-get install lsb-release >&2
     fi
-    dpkg-query -s puppet5-release &> /dev/null
-    if [ $? -ne 0 ]; then
+    
+    if ! dpkg-query -s puppet5-release &> /dev/null
+    then
         CODENAME=$(lsb_release -sc)
         DEST="/tmp/puppet5-release-$CODENAME.deb"
-        wget https://apt.puppetlabs.com/puppet5-release-$CODENAME.deb -O $DEST
-        dpkg -i $DEST
+        wget "https://apt.puppetlabs.com/puppet5-release-$CODENAME.deb" -O "$DEST"
+        dpkg -i "$DEST"
     fi
 }
 # install puppet agent
-dpkg-query -s puppet-agent &> /dev/null
-if [ $? -ne 0 ]; then
+if ! dpkg-query -s puppet-agent &> /dev/null 
+then
     apt-get update && 
     install_puppet_release &&
     apt-get update && apt-get install puppet-agent >&2
@@ -75,13 +77,13 @@ fi
 
 
 # verify if puppet is installed and try to install it otherwise!
-PUPPET_VERSION=$(puppet --version)
-if [ $? -eq 127 ]; then
+if puppet --version -eq 127 # 127 => command not found  
+then
     echo "Try to install puppet"
     SYSBINPATH=$(systemd-path system-binaries)
-    ln -s /opt/puppetlabs/puppet/bin/puppet $SYSBINPATH/puppet
-    PUPPET_VERSION=$(puppet --version)
-    if [ $? -eq 127 ]; then
+    ln -s /opt/puppetlabs/puppet/bin/puppet "$SYSBINPATH/puppet"
+    if puppet --version -eq 127
+    then
         echo "Puppet app is missing! Install it before continuing!"
         exit 1
     fi
@@ -89,13 +91,13 @@ fi
 
 PUPPET_CONFDIR=$(puppet config print confdir)
 PUPPET_ENVPATH=$(puppet config print environmentpath)
-PUPPET_MODULEPATH=$(puppet config print modulepath)
+#PUPPET_MODULEPATH=$(puppet config print modulepath)
 PUPPET_ENVIRONMENT=$(puppet config print environment)
     
 module_install()
 {
-    if [ ! `puppet module list | grep -c $1` -gt 0 ]; then
-        puppet module install $1
+    if [ ! "$(puppet module list | grep -c "$1")" -gt 0 ]; then
+        puppet module install "$1"
     fi
 }
 
@@ -106,7 +108,7 @@ if [ ! -d "$PUPPET_ENVPATH/$PUPPET_ENVIRONMENT" ]; then
 fi
 
 # Set a temporary environment and install hiera and r10k before deploying expected environment.
-cd $PUPPET_CONFDIR
+cd "$PUPPET_CONFDIR" || exit 1
 module_install "puppet-hiera"
 module_install "puppet-r10k"
 
@@ -177,9 +179,9 @@ EOM
 # Install initial pupet-r10k and puppet-hiera 
 puppet apply $VERBOSE $DEBUG -e "$INIT"
 # deploy environment
-r10k deploy environment $PUPPET_ENVIRONMENT -v
-cd $PUPPET_ENVPATH/$PUPPET_ENVIRONMENT
-if [ $? -eq 0 ]; then
+r10k deploy environment "$PUPPET_ENVIRONMENT" -v
+if ! cd "$PUPPET_ENVPATH/$PUPPET_ENVIRONMENT" 
+then
     librarian-puppet install $VERBOSE
 else
     echo "Error during 'r10k deploy environment'!"
@@ -187,10 +189,6 @@ fi
 # deploy the request role
 if [ ! -z "$1" ]; then
     echo "$1" > /etc/role_puppet
-    puppet apply $PUPPET_ENVPATH/$PUPPET_ENVIRONMENT/manifests/site.pp $VERBOSE $DEBUG 
+    puppet apply "$PUPPET_ENVPATH/$PUPPET_ENVIRONMENT/manifests/site.pp" $VERBOSE $DEBUG 
 fi
 exit 0
- 
-
-
-
