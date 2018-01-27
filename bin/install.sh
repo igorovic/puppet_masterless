@@ -180,11 +180,12 @@ EOM
 puppet apply $VERBOSE $DEBUG -e "$INIT"
 # deploy environment
 r10k deploy environment "$PUPPET_ENVIRONMENT" -v
-if ! cd "$PUPPET_ENVPATH/$PUPPET_ENVIRONMENT"
+dir=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
+if [ "$dir" == "$PUPPET_ENVPATH/$PUPPET_ENVIRONMENT" ]
 then
     librarian-puppet install $VERBOSE
 else
-    echo "Error during 'r10k deploy environment'!"
+    echo "Could not deploy environment with librarian-puppet!"
 fi
 # deploy the request role
 if [ ! -z "$1" ]; then
