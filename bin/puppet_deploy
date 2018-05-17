@@ -2,7 +2,7 @@
 #
 # Deploys a puppet role
 # 
-how_help() {
+show_help() {
 cat << EOF
 Usage: ${0##*/} [role]
     This script will deploy a puppet role using 'puppet apply'
