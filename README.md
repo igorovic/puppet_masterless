@@ -1,5 +1,4 @@
-# python_dev
-Puppet `python_dev` environment for automated deployment with r10k.
+
 
 
 # Roles and Profiles
