@@ -4,4 +4,10 @@
 #      
 node default {
   include "role::${::role}"
+  # make sure we haven't started the puppet daemon ever
+  # this might break a report on an agent that triggers this via a daemonized run.
+  service { 'puppet':
+    enable => false,
+    ensure => stopped,
+  }
 }
