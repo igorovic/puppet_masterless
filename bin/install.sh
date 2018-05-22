@@ -3,9 +3,10 @@
 # Installs masterless puppet on the local machine
 # Currently only Debian based nix are supported
 # Note:
-# The script is not failure proof. It means that in case of failure or execution abortion
-# this script will not clean partialy installed data.
-#-------------------------------------------------------------------------------
+# - The script is not failure proof. It means that in case of failure or execution abortion
+#   this script will not clean partialy installed data.
+# - Installation support for Darwin OS (Apple OS X) is not complete and will not work properly. (TODO)
+#-----------------------------------------------------------------------------------------------------
 # Usage info
 show_help() {
 cat << EOF
@@ -50,15 +51,20 @@ while getopts hvdD opt; do
 done
 shift "$((OPTIND-1))"   # Discard the options and sentinel --
 
+
+if [[ "$OSTYPE" == "darwin"* ]];
+then
+    DNAME="$(dirname "$0")"
+    . "$DNAME/osx.sh"
+fi
+
 # Install puppet5 release
 install_puppet_release()
 {
-
     if ! dpkg-query -s lsb-release &> /dev/null
     then
         apt-get install lsb-release >&2
     fi
-
     if ! dpkg-query -s puppet5-release &> /dev/null
     then
         CODENAME=$(lsb_release -sc)
@@ -67,25 +73,40 @@ install_puppet_release()
         dpkg -i "$DEST"
     fi
 }
-# install puppet agent
-if ! dpkg-query -s puppet-agent &> /dev/null
+
+if [[ "$OSTYPE" == "darwin"* ]];
 then
-    apt-get update &&
-    install_puppet_release &&
-    apt-get update && apt-get install puppet-agent >&2
+    # install puppet agent for OX X
+    DEST="/tmp/$PUPPETDMG"
+    wget "$OSXDMG" -O "$DEST"
+    hdiutil mount -mountpoint "/Volumes/puppet" "$DEST"
+    installer -pkg "/Volumes/puppet/puppet-agent"* -target /
+    hdiutil unmount "/Volumes/puppet"
+    echo "puppet-agent installed!"
+else
+    # install puppet agent for linux
+    if ! dpkg-query -s puppet-agent &> /dev/null
+    then
+        apt-get update &&
+        install_puppet_release &&
+        apt-get update && apt-get install puppet-agent >&2
+    fi
 fi
 
 
 # verify if puppet is installed and try to install it otherwise!
-if ! command -v puppet # 127 => command not found
+if ! command -v puppet # result=127 => command not found
 then
-    echo "Try to install puppet"
-    SYSBINPATH=$(systemd-path system-binaries)
-    ln -s /opt/puppetlabs/puppet/bin/puppet "$SYSBINPATH/puppet"
-    if ! command -v puppet
+    if [[ "$OSTYPE" != "darwin"* ]];
     then
-        echo "Puppet app is missing! Install it before continuing!"
-        exit 1
+        echo "Try to install puppet"
+        SYSBINPATH=$(systemd-path system-binaries)
+        ln -s /opt/puppetlabs/puppet/bin/puppet "$SYSBINPATH/puppet"
+        if ! command -v puppet
+        then
+            echo "Puppet app is missing! Install it before continuing!"
+            exit 1
+        fi
     fi
 fi
 
